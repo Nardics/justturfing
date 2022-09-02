@@ -1,0 +1,123 @@
+<head>
+    <meta charset="utf-8" />
+
+    <title>Module 03 Turf the test.js</title>
+    <link href="https://api.mapbox.com/mapbox.js/v3.1.1/mapbox.css" rel="stylesheet" />
+
+    <style>
+        body {
+            font-family: sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        #map {
+            position: absolute;
+            width: 100%;
+            top: 0;
+            bottom: 0;
+        }
+    </style>
+
+</head>
+
+<body>
+    <div id="map"></div>
+
+
+    <script src="https://d3js.org/d3-fetch.v1.min.js"></script>
+    <script src="https://unpkg.com/topojson@3"></script>
+
+
+
+    <script src="https://api.mapbox.com/mapbox.js/v3.1.1/mapbox.js"></script>
+    <script async defer src="https://api.mapbox.com/mapbox-assembly/v0.24.0/assembly.js"></script>
+
+    <script src='https://unpkg.com/@turf/turf@6/turf.min.js'></script>
+
+
+
+    <script>
+        var map = L.map('map', {
+            zoomSnap: 0.1,
+            center: [42.2808, -83.7430],
+            zoom: 12
+        });
+
+        // mapbox access token
+        const accessToken = 'pk.eyJ1IjoibWFwbmFyZCIsImEiOiJjbDcydWE0dXYwOWhuM3ZsYW9oczRrb2Z4In0.wj3XDA0tmhPR9B7FhjdINA'
+
+        // add mapbox tile layers using access token
+        L.tileLayer(`https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token=${accessToken}`, {
+            attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery © <a href="http://mapbox.com">Mapbox</a>',
+            maxZoom: 18,
+            id: 'mapbox/light-v10',
+            accessToken: accessToken
+
+        }).addTo(map);
+
+
+
+        // use D3 fetch to request data with async requests
+
+        const hospitals = d3.json('data/a2-hospitals.geojson');
+
+               // use Promise to wait until data is all loaded
+
+        Promise.all([hospitals]).then(drawMap);
+        
+        
+        function drawMap(data) {
+
+
+            // declare the constants and then addTo(map)
+
+            const hospitalsGeojson = data[0];
+                       
+           
+
+            //convert geojson data to leaflet object
+
+            L.geoJson(hospitalsGeojson).addTo(map);
+
+
+            var layerGroup = L.geoJSON(hospitalsGeojson, {
+
+                onEachFeature: function (feature, layer) {
+
+                    var buffered = turf.buffer(feature, 5, {units: 'miles'});
+                    L.geoJson(buffered).addTo(map);
+
+
+                    var hspName = feature.properties.NAME;
+                                    
+
+                    layer.bindPopup(`<b>${hspName}`)
+
+                    // add event listener to zoom to polygon and set zoom level
+
+                    layer.on('click', function (e) {
+
+                        map.setView(e.latlng, 14.5);
+
+                    })
+
+
+
+                }
+
+            }).addTo(map);
+
+
+        }
+
+
+    </script>
+
+
+
+</body>
+
+
+
+</html>
