@@ -59,14 +59,15 @@
 
 
         // use D3 fetch to request data with async requests
-
+        const counties = d3.json('data/holland-mi-counties.geojson');
         const districts = d3.json('data/populated-places.json');
-
         const lakes = d3.json('data/mi-lakes.json');
+
+
 
         // use Promise to wait until data is all loaded
 
-        Promise.all([districts, lakes]).then(drawMap);
+        Promise.all([counties, districts, lakes]).then(drawMap);
         /*
                 geoCoderControl.on('select', function (e) {
         
@@ -87,19 +88,31 @@
 
 
             // declare the constants and then addTo(map)
+            const countiesGeojson = data[0];
+            const districtsGeojson = data[1];
+            const lakesGeojson = data[2];
 
-            const districtsGeojson = data[0];
-            const lakesGeojson = data[1];
 
             //convert geojson data to leaflet object
 
-            // L.geoJson(districtsGeojson).addTo(map);
+            L.geoJson(countiesGeojson).addTo(map);
+            //L.geoJson(districtsGeojson).addTo(map);
+            L.geoJson(lakesGeojson).addTo(map);
 
 
-            var layerGroup = L.geoJSON(lakesGeojson, {
+
+
+
+            var layerGroup = L.geoJSON(countiesGeojson, {
                 onEachFeature: function (feature, layer) {
 
-                    //console.log(feature.properties.FEATURE_NAME)
+                    area = (turf.area(feature)/1000000).toFixed(2)
+                    
+                    console.log(feature.properties.LABEL);
+                    var placeName = feature.properties.LABEL;
+                    layer.bindPopup(`${placeName} <br/>Area is: <b>${area} sq km</b>`)
+
+                    
 
                     // add event listener to zoom to polygon and set zoom level
 
