@@ -40,8 +40,8 @@
     <script>
         var map = L.map('map', {
             zoomSnap: 0.1,
-            center: [42.7875, -86.1089],
-            zoom: 10
+            center: [42.2808, -83.7430],
+            zoom: 12
         });
 
         // mapbox access token
@@ -59,81 +59,137 @@
 
 
         // use D3 fetch to request data with async requests
-        const counties = d3.json('data/holland-mi-counties.geojson');
+
         const districts = d3.json('data/populated-places.json');
         const lakes = d3.json('data/mi-lakes.json');
 
 
-
         // use Promise to wait until data is all loaded
 
-        Promise.all([counties, districts, lakes]).then(drawMap);
-        /*
-                geoCoderControl.on('select', function (e) {
-        
-        console.log(e)
-        
-        var location = e.latlng;
-        console.log(location);
-        map.setView(e.latlng, 12);
-        
-        //
-        })*/
-
+        Promise.all([districts, lakes]).then(drawMap);
 
 
         function drawMap(data) {
 
-
-
-
             // declare the constants and then addTo(map)
-            const countiesGeojson = data[0];
-            const districtsGeojson = data[1];
-            const lakesGeojson = data[2];
+
+            const districtsGeojson = data[0];
+            // const lakesGeojson = data[1];
+
+
 
 
             //convert geojson data to leaflet object
 
-            L.geoJson(countiesGeojson).addTo(map);
-            //L.geoJson(districtsGeojson).addTo(map);
-            L.geoJson(lakesGeojson).addTo(map);
+            L.geoJson(districtsGeojson).addTo(map);
+            // L.geoJson(lakesGeojson).addTo(map);
+            var dist = [];
 
 
 
 
 
-            var layerGroup = L.geoJSON(countiesGeojson, {
+            var districtsLayerGroup = L.geoJSON(districtsGeojson, {
+
                 onEachFeature: function (feature, layer) {
 
-                    area = (turf.area(feature)/1000000).toFixed(2)
-                    
-                    console.log(feature.properties.LABEL);
-                    var placeName = feature.properties.LABEL;
-                    layer.bindPopup(`${placeName} <br/>Area is: <b>${area} sq km</b>`)
 
-                    
+                    var districtName = feature.properties.FEATURE_NAME;
+
+                    layer.bindTooltip(`<b>${districtName}`).openTooltip().addTo(map);
+
+                    // add event listener to zoom to polygon and set zoom level
+
+                    // console.log(feature.geometry.coordinates);
+                    var townLat = feature.geometry.coordinates[0];
+                    var townLng = feature.geometry.coordinates[1];
+
+
+                    layer.on('click', function (e) {
+
+
+                        var coords1 = e.latlng;
+                        //console.log(coords1);
+
+
+                        var lat1 = coords1.lat;
+                        var lng1 = coords1.lng;
+
+                        map.setView(e.latlng, 12.5);
+
+                        // console.log(coords1);
+
+                        var targetPoint = turf.point([lat1, lng1]);
+                        // console.log(targetPoint);
+
+                        var points = turf.featureCollection([([townLat, townLng])]);
+                        console.log(points);
+
+                        var nearest = turf.nearestPoint(targetPoint, points);
+                        console.log(nearest);
+
+                        var addToMap = [targetPoint, points, nearest];
+
+
+
+
+
+
+
+                        //console.log(nearest);
+
+
+                        // get distance to next feature
+                    })
+
+
+
+                },
+
+
+
+            }).addTo(map);
+
+
+            var lakesLayerGroup = L.geoJSON(lakesGeojson, {
+
+
+                onEachFeature: function (feature, layer) {
+
+
+                    var lakeName = feature.properties.FEATURE_NAME;
+
+
+                    layer.bindTooltip(`<b>${lakeName}`).openTooltip().addTo(map);
 
                     // add event listener to zoom to polygon and set zoom level
 
                     layer.on('click', function (e) {
 
-                        //console.log(e);
-                        var center = e.latlng;
+                        // console.log(e.latlng);
 
-                        console.log(center);
 
-                        map.setView(e.latlng, 13);
 
+                        // map.setView(e.latlng, 14.5);
                     })
-
 
 
                 }
 
+
             }).addTo(map);
 
 
+
+        } // end draw(map)
+
+
+        function findDistanceToLake(lakesLayerGroup) {
+
+            console.log(coords);
+
+            var polyConvert = layer.toGeoJSON()
+            //console.log(polyConvert);
         }
 
 
