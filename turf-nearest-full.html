@@ -1,0 +1,165 @@
+<head>
+    <meta charset="utf-8" />
+
+    <title>Module 03 Turf the test.js</title>
+    <link href="https://api.mapbox.com/mapbox.js/v3.1.1/mapbox.css" rel="stylesheet" />
+
+    <style>
+        body {
+            font-family: sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        #map {
+            position: absolute;
+            width: 100%;
+            top: 0;
+            bottom: 0;
+        }
+    </style>
+
+</head>
+
+<body>
+    <div id="map"></div>
+
+    <script src="https://d3js.org/d3-fetch.v1.min.js"></script>
+    <script src="https://unpkg.com/topojson@3"></script>
+    <script src="https://api.mapbox.com/mapbox.js/v3.1.1/mapbox.js"></script>
+    <script async defer src="https://api.mapbox.com/mapbox-assembly/v0.24.0/assembly.js"></script>
+    <script src='https://unpkg.com/@turf/turf@6/turf.min.js'></script>
+
+    <script>
+        var map = L.map('map', {
+            zoomSnap: 0.1,
+            center: [42.2808, -83.7430],
+            zoom: 12
+        });
+
+        // mapbox access token
+        const accessToken = 'pk.eyJ1IjoibWFwbmFyZCIsImEiOiJjbDcydWE0dXYwOWhuM3ZsYW9oczRrb2Z4In0.wj3XDA0tmhPR9B7FhjdINA'
+
+        // add mapbox tile layers using access token
+        L.tileLayer(`https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token=${accessToken}`, {
+            attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery © <a href="http://mapbox.com">Mapbox</a>',
+            maxZoom: 18,
+            id: 'mapbox/light-v10',
+            accessToken: accessToken
+
+        }).addTo(map);
+
+
+        // use D3 fetch to request data with async requests
+
+        const districts = d3.json('data/populated-places.json');
+        //const lakes = d3.json('data/mi-lakes.json');
+
+
+        // use Promise to wait until data is all loaded
+
+        Promise.all([districts]).then(drawMap);
+
+
+
+        function drawMap(data) {
+
+            // declare the constants and then addTo(map)
+
+            const districtsGeojson = data[0];
+
+            //convert geojson data to leaflet object
+
+            L.geoJson(districtsGeojson).addTo(map);
+            //L.geoJson(lakesGeojson).addTo(map);
+
+           
+
+            // convert to leaflet feature allows access to features and properties
+
+            var districtsLayerGroup = L.geoJSON(districtsGeojson, {
+
+                // allows operations to be performed on each feature and layer
+
+                onEachFeature: function (feature, layer) {
+
+
+                    var districtName = feature.properties.FEATURE_NAME;
+
+
+                    // add event listener to zoom to polygon and set zoom level
+
+
+                    var townLat = feature.geometry.coordinates[0];
+
+                    var townLng = feature.geometry.coordinates[1];
+
+
+                    var myFeaturesCollection = ([([townLat]), [(townLng)]]);
+
+                    map.on('click', function (e) {
+
+                        //console.log(e.latlng);
+                        var coords1 = e.latlng;
+
+                        var lat1 = coords1.lat;
+                        var lng1 = coords1.lng;
+
+                        map.setView(e.latlng, 12.5);
+
+                        var lesCoords = feature.geometry.coordinates;
+                        var tesCoords = feature.geometry.coordinates[1];
+                        var mesCoords = feature.geometry.coordinates[0];
+
+
+                        layer.bindTooltip(`<b>${districtName}<b/><br>${lesCoords}`).openTooltip().addTo(map);
+
+
+                        var targetPoint = turf.point([lng1, lat1]);
+
+                        console.log(targetPoint.geometry.coordinates);
+
+                        var points = turf.featureCollection([turf.point([townLng, townLat])]);
+
+
+                        var nearest = turf.nearestPoint(targetPoint, points);
+                        //console.log(nearest.geometry.coordinates);
+
+                        var addToMap = [targetPoint, points, nearest];
+                        console.log(nearest.geometry.coordinates);
+                        alert(JSON.stringify(nearest));
+
+
+
+
+                        // reload page when user clicks
+                        $('#refresh').on('click', function () {
+                            location.reload();
+
+                        });
+                    })
+
+
+
+                },
+
+
+
+            }).addTo(map);
+
+
+
+
+        } // end draw(map)
+
+
+
+
+    </script>
+
+
+
+</body>
+
+
+</html>
